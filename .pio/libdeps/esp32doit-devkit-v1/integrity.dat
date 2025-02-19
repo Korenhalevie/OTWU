@@ -1,0 +1,5 @@
+fastled/FastLED@^3.9.13
+knolleary/PubSubClient@^2.8
+esphome/ESPAsyncWebServer-esphome@^3.3.0
+adafruit/Adafruit NeoPixel@^1.12.4
+esphome/AsyncTCP-esphome@^2.1.4
