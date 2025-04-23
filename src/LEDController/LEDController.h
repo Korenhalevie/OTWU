@@ -1,3 +1,4 @@
+// LEDController.h
 #ifndef LED_CONTROLLER_H
 #define LED_CONTROLLER_H
 
@@ -12,7 +13,7 @@
 class LEDController {
 private:
     CRGB _leds[NUM_LEDS];
-    String _currentColor; 
+    String _currentColor;
 
 public:
     LEDController();

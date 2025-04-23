@@ -1,3 +1,4 @@
+// WebServerManager.h
 #ifndef WEBSERVERMANAGER_H
 #define WEBSERVERMANAGER_H
 
@@ -7,13 +8,20 @@
 
 class WebServerManager {
 private:
-    AsyncWebServer _server;         
-    LEDController* _ledController; 
-    MQTTManager* _mqttManager; 
+    AsyncWebServer _server;
+    LEDController* _ledController;
+    MQTTManager* _mqttManager;
+
+    void setupRootPage();
+    void setupColorHandler();
+    void setupScheduleHandler();
+    void setupClearScheduleHandler();
+    void setupForgetWiFiHandler();
+    String generateHtmlPage(const String& greenTime, const String& redTime);
 
 public:
     WebServerManager(LEDController* led, MQTTManager* mqtt);
     void setup();
 };
 
-#endif // WEBSERVER_MANAGER_H
+#endif // WEBSERVERMANAGER_H

@@ -1,3 +1,4 @@
+// LEDController.cpp
 #include "LEDController.h"
 
 LEDController::LEDController() : _currentColor("off") {}
@@ -11,25 +12,18 @@ void LEDController::setup()
 
 void LEDController::setColor(const String& color)
 {
-    if (color == "green")
-    {
+    if (color == "green") {
         _leds[0] = CRGB::Green;
-    }
-    else if (color == "red")
-    {
+    } else if (color == "red") {
         _leds[0] = CRGB::Red;
-    }
-    else if (color == "blue")
-    {
+    } else if (color == "blue") {
         _leds[0] = CRGB::Blue;
-    }
-    else
-    {
+    } else {
         _leds[0] = CRGB::Black;
     }
 
     FastLED.show();
-    delay(10); 
+    delay(10);
     _currentColor = color;
 }
 

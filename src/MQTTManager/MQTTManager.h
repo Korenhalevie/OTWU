@@ -1,27 +1,30 @@
+// MQTTManager.h
 #ifndef MQTT_MANAGER_H
 #define MQTT_MANAGER_H
 
-#include "LEDController/LEDController.h"
-#include <PubSubClient.h>
 #include <WiFi.h>
+#include <PubSubClient.h>
+#include "LEDController/LEDController.h"
 
 class MQTTManager
 {
 private:
     static MQTTManager* _instance;
 
-    LEDController* _ledController;  
-    WiFiClient _espClient;       
-    PubSubClient _client;         
-    const char* _broker;       
-    int _port;                      
-    const char* _topic;      
-    const char* _username;          
-    const char* _password;         
-    bool _connected;               
+    LEDController* _ledController;
+    WiFiClient _espClient;
+    PubSubClient _client;
+    const char* _broker;
+    int _port;
+    const char* _topic;
+    const char* _username;
+    const char* _password;
+    bool _connected;
+
+    void connect();
 
 public:
-    MQTTManager(const char* broker, int port, const char* topic, LEDController* ledController, 
+    MQTTManager(const char* broker, int port, const char* topic, LEDController* ledController,
                 const char* username = nullptr, const char* password = nullptr);
 
     void setup();
