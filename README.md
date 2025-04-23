@@ -84,7 +84,11 @@ ok_to_wake/color
 ---
 
 ## 🌐 Web Interface
-- Access via `http://[ESP_IP]` or `http://otw.local`
+Once the device is connected to your WiFi network, you can access the control panel via `http://otw.local` or the assigned local IP (e.g., `http://192.168.1.x`).
+
+If no WiFi is configured, the ESP32 boots into Access Point (AP) mode and opens a **Captive Portal**, allowing you to select and enter your home WiFi credentials. Once connected, the AP closes and the system becomes accessible via your LAN.
+
+![Web Dashboard](images/web-dashboard.png)
 - Clickable color buttons (styled to match actual colors)
 - Real-time LED color display with a live color circle
 - Schedule section for "green time" and "red time"
