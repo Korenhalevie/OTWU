@@ -21,6 +21,7 @@ private:
 
     void saveWiFiCredentials(const String &ssid, const String &password);
     bool loadWiFiCredentials(String &ssid, String &password);
+    String generateWiFiSetupPage(int numNetworks);
 
 public:
     CaptivePortalManager(const char *ssid, const IPAddress &localIP, const IPAddress &gatewayIP, const String &redirectURL);

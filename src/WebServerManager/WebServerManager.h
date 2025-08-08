@@ -17,7 +17,7 @@ private:
     void setupScheduleHandler();
     void setupClearScheduleHandler();
     void setupForgetWiFiHandler();
-    String generateHtmlPage(const String& greenTime, const String& redTime);
+    String generateHtmlPage(const String& greenWindows, const String& currentColor);
 
 public:
     WebServerManager(LEDController* led, MQTTManager* mqtt);
