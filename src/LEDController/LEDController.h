@@ -3,6 +3,7 @@
 #define LED_CONTROLLER_H
 
 #include <FastLED.h>
+#include <Preferences.h>
 
 #define LED_PIN      23
 #define NUM_LEDS     1
@@ -14,12 +15,16 @@ class LEDController {
 private:
     CRGB _leds[NUM_LEDS];
     String _currentColor;
+    uint8_t _brightness; // 0-255
+    Preferences _prefs;
 
 public:
     LEDController();
     void setup();
     void setColor(const String& color);
     String getColor() const;
+    void setBrightnessPercent(uint8_t percent); // 0-100
+    uint8_t getBrightnessPercent() const;       // 0-100
 };
 
 #endif // LED_CONTROLLER_H

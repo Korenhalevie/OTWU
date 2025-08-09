@@ -9,6 +9,7 @@ WebServerManager::WebServerManager(LEDController* led, MQTTManager* mqtt)
 void WebServerManager::setup() {
     setupRootPage();
     setupColorHandler();
+  setupBrightnessHandler();
     setupScheduleHandler();
     setupClearScheduleHandler();
     setupForgetWiFiHandler();
@@ -18,8 +19,11 @@ void WebServerManager::setup() {
 void WebServerManager::setupRootPage() {
     _server.on("/", HTTP_GET, [this](AsyncWebServerRequest* request) {
         String greenWindows = ScheduleManager::getGreenWindows();
-        String currentColor = _ledController->getColor();
-        request->send(200, "text/html", generateHtmlPage(greenWindows, currentColor));
+  String currentColor = _ledController->getColor();
+  // Inject brightness percent into page via placeholder token appended to greenWindows variable (separate param simpler)
+  String page = generateHtmlPage(greenWindows, currentColor);
+  page.replace("<!--BRIGHTNESS_PLACEHOLDER-->", String(_ledController->getBrightnessPercent()));
+  request->send(200, "text/html", page);
     });
 }
 
@@ -34,6 +38,19 @@ void WebServerManager::setupColorHandler() {
             request->send(400, "text/plain", "Missing color parameter");
         }
     });
+}
+
+void WebServerManager::setupBrightnessHandler() {
+  _server.on("/setBrightness", HTTP_GET, [this](AsyncWebServerRequest* request) {
+    if (request->hasParam("value")) {
+      int val = request->getParam("value")->value().toInt();
+      if (val < 0) val = 0; if (val > 100) val = 100;
+      _ledController->setBrightnessPercent((uint8_t)val);
+      request->send(200, "text/plain", "Brightness set to " + String(val));
+    } else {
+      request->send(400, "text/plain", "Missing value parameter");
+    }
+  });
 }
 
 void WebServerManager::setupScheduleHandler() {
@@ -176,8 +193,8 @@ a,button{cursor:pointer}.sr{position:absolute;width:1px;height:1px;padding:0;mar
       </div>
     </section>
 
-    <!-- Light Control -->
-    <section class="card" aria-labelledby="light-title">
+  <!-- Light Control -->
+  <section class="card" aria-labelledby="light-title">
       <div class="card-header">
         <div>
           <div class="card-title" id="light-title"><span class="ico">💡</span> Light Control</div>
@@ -196,6 +213,15 @@ a,button{cursor:pointer}.sr{position:absolute;width:1px;height:1px;padding:0;mar
         <button class="btn btn-outline" id="manualControlBtn" onclick="toggleManualMode()" title="Toggle Manual Control">
           <span class="ico">⚙️</span> <span id="manualControlText">Enable Manual</span>
         </button>
+      </div>
+
+      <!-- Brightness (independent of mode) -->
+      <div style="margin-top:18px">
+        <label for="brightnessSlider" class="label" style="color:var(--accent);display:flex;align-items:center;gap:8px"><span class="ico">🔆</span> Brightness: <span id="brightnessValue">--</span>%</label>
+        <div class="brightness-wrapper" style="position:relative;height:46px;display:flex;align-items:center;">
+          <input type="range" id="brightnessSlider" min="0" max="100" value="0" style="width:100%;appearance:none;height:16px;border-radius:999px;background:linear-gradient(90deg,var(--muted) 0%, var(--muted) 100%);outline:none;border:1px solid var(--border);padding:0;margin:0;"
+            aria-label="Brightness" />
+        </div>
       </div>
     </section>
 
@@ -262,6 +288,7 @@ let currentColor = 'off';
 let isLoading = false;
 let greenWindows = [];
 let isManualMode = false;
+let brightness = <!--BRIGHTNESS_PLACEHOLDER-->; // injected from server
 
 const $ = (id) => document.getElementById(id);
 
@@ -297,6 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize color status from server parameter
   const initColor = ')rawliteral" + currentColor + R"rawliteral(';
   updateStatus((initColor && initColor !== '') ? initColor : 'off');
+
+  // Initialize brightness slider
+  setupBrightnessSlider();
 
   // To ensure the add button works at all times
   const addBtn = $('addWindowBtn');
@@ -360,6 +390,7 @@ function updateStatus(color){
   $('currentStatus').textContent = statusTexts[color] || 'Unknown';
   currentColor = color || 'off';
   setAccentBy(color);
+  updateBrightnessGradient();
 }
 
 function setButtonLoading(buttonId, loading){
@@ -377,6 +408,58 @@ function setButtonLoading(buttonId, loading){
       btnOff:'<span>⚫</span> Turn Off'
     };
     btn.innerHTML = original[buttonId] || btn.innerHTML;
+  }
+}
+
+// ------- Brightness Control -------
+function setupBrightnessSlider(){
+  const slider = $('brightnessSlider');
+  const valueEl = $('brightnessValue');
+  if(!slider || !valueEl) return;
+  if (isNaN(brightness)) brightness = 100;
+  slider.value = brightness;
+  valueEl.textContent = brightness;
+  updateBrightnessGradient();
+  slider.addEventListener('input', ()=>{
+    const val = Number(slider.value);
+    valueEl.textContent = val;
+    brightness = val;
+    updateBrightnessGradient();
+    // send continuously (debounced)
+    scheduleBrightnessSend(val);
+  });
+}
+
+function updateBrightnessGradient(){
+  const slider = $('brightnessSlider');
+  if(!slider) return;
+  // Choose color based on currentColor and a soft starting tint
+  let c = '#777777', start = 'rgba(120,120,120,0.05)';
+  if(currentColor === 'green'){ c = 'hsl(120,70%,45%)'; start = 'rgba(0,255,0,0.12)'; }
+  else if(currentColor === 'red'){ c = 'hsl(0,60%,55%)'; start = 'rgba(255,0,0,0.10)'; }
+  else if(currentColor === 'blue'){ c = 'hsl(210,80%,58%)'; start = 'rgba(30,144,255,0.12)'; }
+  const pct = brightness || 0;
+  slider.style.background = `linear-gradient(90deg, ${start} 0%, ${c} ${pct}%, var(--muted) ${pct}%, var(--muted) 100%)`;
+  slider.style.opacity = (pct === 0 ? 0.45 : 1);
+}
+
+let brightnessTimeout;
+function scheduleBrightnessSend(val){
+  if (brightnessTimeout) clearTimeout(brightnessTimeout);
+  brightnessTimeout = setTimeout(()=> sendBrightness(val), 90); // faster debounce
+}
+
+async function sendBrightness(val){
+  try {
+    const res = await fetch('/setBrightness?value=' + encodeURIComponent(val));
+    if(res.ok){
+      // no toast spam; show only occasionally
+      if (val === 0 || val === 100 || (val % 10 === 0)) {
+        showToast('Brightness ' + val + '%','success');
+      }
+    }
+  } catch(e){
+    console.error('Brightness error', e);
   }
 }
 

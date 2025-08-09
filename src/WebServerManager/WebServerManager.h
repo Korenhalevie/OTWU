@@ -14,6 +14,7 @@ private:
 
     void setupRootPage();
     void setupColorHandler();
+    void setupBrightnessHandler();
     void setupScheduleHandler();
     void setupClearScheduleHandler();
     void setupForgetWiFiHandler();
